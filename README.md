@@ -24,13 +24,13 @@ To deploy to a WildFly container:
 1. Create a derivative of the `jboss/wildfly` image that adds an admin user and binds the management port on 0.0.0.0.
     1. Example Dockerfile:
 
-    ```dockerfile
-    FROM jboss/wildfly
+```dockerfile
+FROM jboss/wildfly
     
-    RUN /opt/jboss/wildfly/bin/add-user.sh admin password --silent
+RUN /opt/jboss/wildfly/bin/add-user.sh admin password --silent
     
-    CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
-    ```
+CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
+```
 1. Build and run your WildFly container
     1. `docker build -t your-wildfly-image .`
     1. `docker run -d --name wildfly your-wildfly-image`
