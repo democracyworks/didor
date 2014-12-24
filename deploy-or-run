@@ -2,7 +2,7 @@
 
 APP=$(grep defproject project.clj | awk '{print $2}')
 
-if [[ -z "${WILDFLY_ADMIN_USER}" || -z "${WILDFLY_ADMIN_PASSWORD" ]]; then
+if [[ -z "${WILDFLY_ADMIN_USER}" || -z "${WILDFLY_ADMIN_PASSWORD}" ]]; then
   echo "WILDFLY_ADMIN_USER and WILDFLY_ADMIN_PASSWORD must be set"
   exit 1
 fi
