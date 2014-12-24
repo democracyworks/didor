@@ -23,6 +23,7 @@ To run the container in standalone mode (lein run):
 To deploy to a WildFly container:
 1. Create a derivative of the `jboss/wildfly` image that adds an admin user and binds the management port on 0.0.0.0.
     1. Example Dockerfile:
+
     ```dockerfile
     FROM jboss/wildfly
     
