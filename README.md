@@ -14,7 +14,7 @@ sleep indefinitely, and undeploy the .war file when stopped.
 Put the `deploy-or-run` script in your container and run it as the CMD in your Dockerfile.
 It will pull the name of your app from the `(defproject ...)` form in your `project.clj` file
 and deploy `[app].war` from your `target/` directory (so make sure you run `lein immutant war`
-in your Docker build process.
+in your Docker build process).
 
 To run the container in standalone mode (lein run):
 
@@ -39,3 +39,9 @@ CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0
     1. `docker run -d --name wildfly your-wildfly-image`
 1. `docker build -t your-image-tag .`
 1. `docker run --link wildfly:wildfly -d your-image-tag`
+
+## TODO
+
+1. Put a permissive license on this.
+1. Build the .war on demand if it's missing and there's a linked wildfly container.
+1. Create a leiningen template that pre-installs this script and its Clojure dependencies.
