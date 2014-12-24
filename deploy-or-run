@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP=$(basename $(git rev-parse --show-toplevel))
+APP=$(grep defproject project.clj | awk '{print $2}')
 
 if [[ -z "${WILDFLY_ADMIN_USER}" || -z "${WILDFLY_ADMIN_PASSWORD" ]]; then
   echo "WILDFLY_ADMIN_USER and WILDFLY_ADMIN_PASSWORD must be set"
