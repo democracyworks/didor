@@ -25,8 +25,8 @@ function wildfly_operation {
 function undeploy {
   if [[ "${DEPLOYED}" == "yes" ]]; then
     echo "Undeploying ${APP}... "
-    wildfly_operation "{\"operation\": \"undeploy\", \"address\": [{\"deployment\": \"${APP}.war\"}]}" > /dev/null
-    wildfly_operation "{\"operation\": \"remove\", \"address\": [{\"deployment\": \"${APP}.war\"}]}" > /dev/null
+    IGNORE=$(wildfly_operation "{\"operation\": \"undeploy\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
+    IGNORE=$(wildfly_operation "{\"operation\": \"remove\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
     echo "Done."
   fi
 }
