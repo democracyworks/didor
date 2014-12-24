@@ -1,0 +1,58 @@
+#!/bin/bash
+
+APP=$(basename $(git rev-parse --show-toplevel))
+
+if [[ -z "${WILDFLY_ADMIN_USER}" || -z "${WILDFLY_ADMIN_PASSWORD" ]]; then
+  echo "WILDFLY_ADMIN_USER and WILDFLY_ADMIN_PASSWORD must be set"
+  exit 1
+fi
+
+WILDFLY_ADMIN_URL="http://${WILDFLY_ADMIN_USER}:${WILDFLY_ADMIN_PASSWORD}@${WILDFLY_PORT_9990_TCP_ADDR}:${WILDFLY_PORT_9990_TCP_PORT}/management"
+
+DEPLOYED=no
+
+function wildfly_operation {
+  local json=${1}
+  local response=$(curl -s -S -H "Content-Type: application/json" -d "${json}" --digest ${WILDFLY_ADMIN_URL} | awk '{printf("%s",$0);}')
+  if [[ $(echo "${response}" | jq -c -r '.outcome') != "success" ]]; then
+    echo -e "${APP} error from WildFly: ${response}\n\nPayload: ${json}"
+    return 1
+  fi
+  echo "${response}"
+  return 0
+}
+
+function undeploy {
+  if [[ "${DEPLOYED}" == "yes" ]]; then
+    echo "Undeploying ${APP}... "
+    wildfly_operation "{\"operation\": \"undeploy\", \"address\": [{\"deployment\": \"${APP}.war\"}]}" > /dev/null
+    wildfly_operation "{\"operation\": \"remove\", \"address\": [{\"deployment\": \"${APP}.war\"}]}" > /dev/null
+    echo "Done."
+  fi
+}
+
+function deploy_failure {
+  echo "Deploy failed: ${1}"
+  exit 1
+}
+
+trap undeploy EXIT
+
+if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
+  echo "Deploying ${APP} to WildFly... "
+  WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
+  WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
+  if [[ "${WILDFLY_SESSION}" != "error" ]]; then
+    DEPLOYED=yes
+    WILDFLY_RESPONSE=$(wildfly_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}")
+    if [[ $? -ne 0 ]]; then
+      deploy_failure "${WILDFLY_RESPONSE}"
+    fi
+  else
+    deploy_failure "${WILDFLY_RESPONSE}"
+  fi
+  echo "Done."
+  sleep infinity
+else
+  exec lein run
+fi
