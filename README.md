@@ -17,10 +17,12 @@ and deploy `[app].war` from your `target/` directory (so make sure you run `lein
 in your Docker build process.
 
 To run the container in standalone mode (lein run):
+
 1. `docker build -t your-image-tag .`
 1. `docker run -P -d your-image-tag`
 
 To deploy to a WildFly container:
+
 1. Create a derivative of the `jboss/wildfly` image that adds an admin user and binds the management port on 0.0.0.0.
     1. Example Dockerfile:
 
@@ -31,6 +33,7 @@ RUN /opt/jboss/wildfly/bin/add-user.sh admin password --silent
     
 CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
 ```
+
 1. Build and run your WildFly container
     1. `docker build -t your-wildfly-image .`
     1. `docker run -d --name wildfly your-wildfly-image`
