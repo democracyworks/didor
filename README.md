@@ -2,7 +2,11 @@
 
 This script is designed to allow simpler Docker containers for Clojure apps in dev and production using Immutant 2.
 
-It should be the "CMD" in your Clojure app's Dockerfile.
+It should be the "CMD" in your Clojure app's Dockerfile, like this:
+
+```
+CMD ["/bin/deploy-or-run"]
+```
 
 When run without a linked "wildfly" container, it just executes `lein run`.
 
