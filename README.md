@@ -44,6 +44,15 @@ CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0
 1. `docker build -t your-image-tag .`
 1. `docker run --link wildfly:wildfly -d your-image-tag`
 
+## Building the docker image
+
+From in the `didor/` dir
+
+```
+> docker build -t quay.io/democracyworks/didor .
+> docker push quay.io/democracyworks/didor
+```
+
 ## TODO
 
 1. Put a permissive license on this.
