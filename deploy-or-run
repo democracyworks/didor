@@ -41,6 +41,8 @@ function deploy_failure {
 trap undeploy EXIT
 
 if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
+  echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT} ... "
+  while ! nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null; do sleep 1; done
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
   WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
