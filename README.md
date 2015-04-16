@@ -43,8 +43,8 @@ CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0
 From in the `didor/` dir
 
 ```
-> docker build -t quay.io/democracyworks/didor .
-> docker push quay.io/democracyworks/didor
+> docker build -t your.repo/didor .
+> docker push your.repo/didor
 ```
 
 ## TODO
