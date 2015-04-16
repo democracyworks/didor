@@ -2,8 +2,6 @@
 
 This script is designed to allow simpler Docker containers for Clojure apps in dev and production using Immutant 2.
 
-It should be the "CMD" in your Clojure app's Dockerfile.
-
 When run without a linked "wildfly" container, it just executes `lein run`.
 
 When run *with* a linked "wildfly" container, it will deploy the .war file into the WildFly application server,
@@ -39,6 +37,15 @@ CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0
     1. `docker run -d --name wildfly your-wildfly-image`
 1. `docker build -t your-image-tag .`
 1. `docker run --link wildfly:wildfly -d your-image-tag`
+
+## Building the docker image
+
+From in the `didor/` dir
+
+```
+> docker build -t your.repo/didor .
+> docker push your.repo/didor
+```
 
 ## TODO
 

@@ -66,6 +66,8 @@ if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   echo "Building and/or configuring ${APP} WAR file..."
   build_war
   configure_war
+  echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR}:${WILDFLY_PORT_9990_TCP_PORT} ... "
+  while ! nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null; do sleep 1; done
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
   WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
