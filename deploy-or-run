@@ -46,7 +46,7 @@ if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
   WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
-  if [[ "${WILDFLY_SESSION}" != "error" ]]; then
+  if [[ "${WILDFLY_CONTENT}" != "error" ]]; then
     DEPLOYED=yes
     WILDFLY_RESPONSE=$(wildfly_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}")
     if [[ $? -ne 0 ]]; then
