@@ -40,8 +40,6 @@ CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0", "-bmanagement", "0
 
 ## Building the docker image
 
-From in the `didor/` dir
-
 ```
 > docker build -t your.repo/didor .
 > docker push your.repo/didor

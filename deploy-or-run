@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 APP=$(grep defproject project.clj | awk '{print $2}')
 
 if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
@@ -24,6 +26,28 @@ function wildfly_operation {
   return 0
 }
 
+function ensure_war {
+  if [[ ! -e target/${APP}.war ]]; then
+    echo "NOTICE: No ${APP}.war file found in /target dir. Building it now..."
+    lein immutant war --name ${APP} --destination-dir target
+  fi
+}
+
+function configure_war {
+  # render env vars into the config file before we build the WAR file
+  local cwd=$(pwd)
+  local tmpdir=${cwd}/target/tmp
+  mkdir -p $tmpdir
+  cd /opt/didor && bundle exec ./read_edn.rb ${cwd}/resources/config.edn > ${tmpdir}/config.edn
+  echo "WAR config: $(<${tmpdir}/config.edn)"
+  cd ${tmpdir}
+  jar -xf ../${APP}.war WEB-INF/lib/${APP}.jar
+  jar -uf WEB-INF/lib/${APP}.jar -C ${tmpdir} config.edn
+  jar -uf ../${APP}.war WEB-INF/lib/${APP}.jar
+  cd ${cwd}
+  rm -rf ${tmpdir}
+}
+
 function undeploy {
   if [[ "${DEPLOYED}" == "yes" ]]; then
     echo "Undeploying ${APP}... "
@@ -40,8 +64,11 @@ function deploy_failure {
 
 trap undeploy EXIT
 
-if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
-  echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT} ... "
+if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
+  ensure_war
+  echo "Configuring ${APP} WAR file..."
+  configure_war
+  echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR}:${WILDFLY_PORT_9990_TCP_PORT} ... "
   while ! nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null; do sleep 1; done
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
@@ -58,5 +85,6 @@ if [[ -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   echo "Done."
   sleep infinity
 else
+  echo "No WildFly container found, using lein run"
   exec lein run
 fi
