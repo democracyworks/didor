@@ -1,0 +1,10 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    edn (1.0.6)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  edn (~> 1.0.2)
