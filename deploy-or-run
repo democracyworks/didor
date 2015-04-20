@@ -29,7 +29,7 @@ function wildfly_operation {
 function ensure_war {
   if [[ ! -e target/${APP}.war ]]; then
     echo "NOTICE: No ${APP}.war file found in /target dir. Building it now..."
-    lein immutant war --name ${APP} --destination-dir target
+    lein immutant war --name ${APP} --destination target
   fi
 }
 
