@@ -19,7 +19,7 @@ function wildfly_operation {
   local json=${1}
   local response=$(curl -s -S -H "Content-Type: application/json" -d "${json}" --digest ${WILDFLY_ADMIN_URL} | awk '{printf("%s",$0);}')
   if [[ $(echo "${response}" | jq -c -r '.outcome') != "success" ]]; then
-    echo -e "${APP} error from WildFly: ${response}\n\nPayload: ${json}"
+    deploy_failure "${APP} error from WildFly: ${response}\n\nPayload: ${json}"
     return 1
   fi
   echo "${response}"
@@ -65,13 +65,14 @@ function deploy_failure {
 function wait_for_wildfly {
   echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT} ... "
   for i in {1..30}; do
-    nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null
-    if [[ $? -eq 0 ]]; then
+    if nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null; then
       echo "Wildfly is there!"
       return 0
     fi
+    echo "WildFly not found, waiting..."
     sleep 1
   done
+  deploy_failure "Could not find Wildfly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT}"
   return 1
 }
 
@@ -83,19 +84,13 @@ if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   configure_war
 
   wait_for_wildfly
-  if [[ $? -ne 0 ]]; then
-    deploy_failure "Could not find Wildfly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT}"
-  fi
 
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
   WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
   if [[ "${WILDFLY_CONTENT}" != "error" ]]; then
     DEPLOYED=yes
-    WILDFLY_RESPONSE=$(wildfly_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}")
-    if [[ $? -ne 0 ]]; then
-      deploy_failure "${WILDFLY_RESPONSE}"
-    fi
+    wildfly_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}"
   else
     deploy_failure "${WILDFLY_RESPONSE}"
   fi
