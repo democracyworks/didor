@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -o pipefail
 
 APP=$(grep defproject project.clj | awk '{print $2}')
 
@@ -65,7 +66,7 @@ function deploy_failure {
 function wait_for_wildfly {
   echo "Waiting for WildFly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT} ... "
   for i in {1..30}; do
-    if nc -q 1 $WILDFLY_PORT_9990_TCP_ADDR $WILDFLY_PORT_9990_TCP_PORT </dev/null; then
+    if curl -sf --digest $WILDFLY_ADMIN_URL | jq '.' >/dev/null 2>&1; then
       echo "Wildfly is there!"
       return 0
     fi
