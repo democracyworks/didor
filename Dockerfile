@@ -5,7 +5,7 @@ RUN mkdir -p /opt/didor
 WORKDIR /opt/didor
 
 RUN apt-get update && apt-get upgrade -y # last updated 20150416
-RUN apt-get install -y ruby jq curl netcat
+RUN apt-get install -y ruby jq curl
 RUN gem install bundler
 
 COPY ./Gemfile /opt/didor/Gemfile
