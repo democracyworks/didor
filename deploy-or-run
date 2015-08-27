@@ -71,7 +71,7 @@ function wait_for_wildfly {
       return 0
     fi
     echo "WildFly not found, waiting..."
-    sleep 1
+    sleep $i
   done
   deploy_failure "Could not find Wildfly at ${WILDFLY_PORT_9990_TCP_ADDR} ${WILDFLY_PORT_9990_TCP_PORT}"
   return 1
