@@ -1,4 +1,4 @@
-FROM clojure:lein-2.5.1
+FROM clojure:lein-2.5.2
 MAINTAINER Democracy Works, Inc. <dev@democracy.works>
 
 RUN mkdir -p /opt/didor
