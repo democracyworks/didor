@@ -1,12 +1,11 @@
-FROM clojure:lein-2.5.3
+FROM clojure:lein-2.6.1-alpine
 MAINTAINER Democracy Works, Inc. <dev@democracy.works>
 
 RUN mkdir -p /opt/didor
 WORKDIR /opt/didor
 
-RUN apt-get update && apt-get upgrade -y # last updated 20151109
-RUN apt-get install -y ruby jq curl
-RUN gem install bundler --no-document
+RUN apk add --update ruby ruby-dev build-base jq curl
+RUN gem install bundler io-console --no-document
 
 COPY ./Gemfile /opt/didor/Gemfile
 COPY ./Gemfile.lock /opt/didor/Gemfile.lock
