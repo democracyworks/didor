@@ -80,6 +80,13 @@ function wait_for_wildfly {
 
 function not_already_deployed {
   echo "Checking for existing deployment of ${APP}"
+  if hash shasum 2>/dev/null; then
+    SHA_COMMAND=shasum -a 1
+  else
+    SHA_COMMAND=sha1sum
+  fi
+  WAR_HASH=$(SHA_COMMAND target/${APP}.war)
+  # TODO: Get hash of existing deployment from WildFly API and compare
   return 1
 }
 
