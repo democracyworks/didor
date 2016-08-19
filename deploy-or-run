@@ -36,6 +36,7 @@ function ensure_war {
 
 function configure_war {
   # render env vars into the config file before we build the WAR file
+  echo "Configuring ${APP} WAR file..."
   local cwd=$(pwd)
   local tmpdir=${cwd}/target/tmp
   mkdir -p $tmpdir
@@ -77,15 +78,12 @@ function wait_for_wildfly {
   return 1
 }
 
-trap undeploy EXIT
+function check_for_existing_deployment {
+  
+  echo "Checking for existing deployment of ${APP}"
+}
 
-if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
-  ensure_war
-  echo "Configuring ${APP} WAR file..."
-  configure_war
-
-  wait_for_wildfly
-
+function deploy_to_wildfly {
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
   WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
@@ -96,6 +94,18 @@ if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
     deploy_failure "${WILDFLY_RESPONSE}"
   fi
   echo "Done."
+}
+
+trap undeploy EXIT
+
+if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
+  ensure_war
+  configure_war
+  wait_for_wildfly
+  EXISTING_DEPLOYMENT=$(check_for_existing_deployment)
+  if [[ ! ${EXISTING_DEPLOYMENT} ]]; then
+    deploy_to_wildfly
+  fi
   sleep infinity
 else
   echo "No WildFly container found, using lein run"
