@@ -78,9 +78,9 @@ function wait_for_wildfly {
   return 1
 }
 
-function check_for_existing_deployment {
-  
+function not_already_deployed {
   echo "Checking for existing deployment of ${APP}"
+  return 1
 }
 
 function deploy_to_wildfly {
@@ -102,8 +102,7 @@ if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   ensure_war
   configure_war
   wait_for_wildfly
-  EXISTING_DEPLOYMENT=$(check_for_existing_deployment)
-  if [[ ! ${EXISTING_DEPLOYMENT} ]]; then
+  if not_already_deployed; then
     deploy_to_wildfly
   fi
   sleep infinity
