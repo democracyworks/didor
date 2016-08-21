@@ -19,7 +19,14 @@ DEPLOYED=no
 function wildfly_operation {
   local json=${1}
   local response=$(curl -s -S -H "Content-Type: application/json" -d "${json}" --digest ${WILDFLY_ADMIN_URL} | awk '{printf("%s",$0);}')
-  if [[ $(echo "${response}" | jq -c -r '.outcome') != "success" ]]; then
+  echo "${response}"
+  return 0
+}
+
+function wildfly_deploy_operation {
+  local json=${1}
+  local response=$(wildfly_operation "$json")
+  if [[ $(echo "${response}" | jq -cr '.outcome') != "success" ]]; then
     deploy_failure "${APP} error from WildFly: ${response}\n\nPayload: ${json}"
     return 1
   fi
@@ -53,8 +60,9 @@ function configure_war {
 function undeploy {
   if [[ "${DEPLOYED}" == "yes" ]]; then
     echo "Undeploying ${APP}... "
-    IGNORE=$(wildfly_operation "{\"operation\": \"undeploy\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
-    IGNORE=$(wildfly_operation "{\"operation\": \"remove\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
+    IGNORE=$(wildfly_deploy_operation "{\"operation\": \"undeploy\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
+    IGNORE=$(wildfly_deploy_operation "{\"operation\": \"remove\", \"address\": [{\"deployment\": \"${APP}.war\"}]}")
+    DEPLOYED=no
     echo "Done."
   fi
 }
@@ -80,30 +88,41 @@ function wait_for_wildfly {
 
 function not_already_deployed {
   echo "Checking for existing deployment of ${APP}"
-  if hash shasum 2>/dev/null; then
-    SHA_COMMAND=shasum -a 1
+  WAR_HASH=$(cat target/${APP}.war | openssl dgst -binary -sha1 | base64)
+  echo "WAR SHA1: ${WAR_HASH}"
+  WILDFLY_OP="{\"operation\": \"read-attribute\", \"name\": \"content\", \
+               \"address\": [\"deployment\", \"${APP}.war\"]}"
+  WILDFLY_RESPONSE=$(wildfly_operation "${WILDFLY_OP}")
+  WILDFLY_RESULT=$(echo "${WILDFLY_RESPONSE}" | jq -cr 'if .outcome == "success" then .result[0].hash.BYTES_VALUE else "not-deployed" end')
+  if [[ "${WILDFLY_RESULT}" == "not-deployed" ]]; then
+    return 0
   else
-    SHA_COMMAND=sha1sum
+    WILDFLY_HASH=${WILDFLY_RESULT}
+    echo "WildFly SHA1: ${WILDFLY_HASH}"
+    if [[ "${WAR_HASH}" == "${WILDFLY_HASH}" ]]; then
+      return 1
+    else
+      echo "Different version deployed; undeploying first..."
+      DEPLOYED=yes
+      undeploy
+      echo "Finished undeploying"
+      return 0
+    fi
   fi
-  WAR_HASH=$(SHA_COMMAND target/${APP}.war)
-  # TODO: Get hash of existing deployment from WildFly API and compare
-  return 1
 }
 
 function deploy_to_wildfly {
   echo "Deploying ${APP} to WildFly... "
   WILDFLY_RESPONSE=$(curl -s -S -F "file=@target/${APP}.war" --digest ${WILDFLY_ADMIN_URL}/add-content)
-  WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -c 'if .outcome == "success" then .result else "error" end')
+  WILDFLY_CONTENT=$(echo "${WILDFLY_RESPONSE}" | jq -cr 'if .outcome == "success" then .result else "error" end')
   if [[ "${WILDFLY_CONTENT}" != "error" ]]; then
     DEPLOYED=yes
-    wildfly_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}"
+    wildfly_deploy_operation "{\"content\":[{\"hash\": ${WILDFLY_CONTENT}}], \"address\": [{\"deployment\": \"${APP}.war\"}], \"operation\": \"add\", \"enabled\": \"true\"}"
   else
     deploy_failure "${WILDFLY_RESPONSE}"
   fi
   echo "Done."
 }
-
-trap undeploy EXIT
 
 if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   ensure_war
