@@ -98,6 +98,6 @@ if [[ -n "${NO_LEIN_RUN}" || -n "${WILDFLY_PORT_9990_TCP_ADDR}" ]]; then
   echo "Done."
   sleep infinity
 else
-  echo "No WildFly container found, using lein run"
-  exec lein run
+  echo "No WildFly container found, using lein ${LEIN_ARGS} run"
+  exec lein ${LEIN_ARGS} run
 fi
